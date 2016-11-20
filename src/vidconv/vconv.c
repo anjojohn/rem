@@ -572,7 +572,59 @@ static void nv21_to_yuv420p(unsigned xoffs, unsigned width, double rw,
 	}
 }
 
-#define MAX_SRC 9
+
+static inline void _yuv2rgb(uint8_t *rgb, uint8_t y, uint8_t u, uint8_t v)
+{
+	int ruv, guv, buv;
+
+	ruv = CRV[v];
+	guv = CGV[v] + CGU[u];
+	buv = CBU[u];
+
+	*rgb++ = saturate_u8(y + buv);
+	*rgb++ = saturate_u8(y + guv);
+	*rgb++ = saturate_u8(y + ruv);
+	*rgb   = 0;
+}
+
+
+static void yuv444p_to_rgb32(unsigned xoffs, unsigned width, double rw,
+			     unsigned yd, unsigned ys, unsigned ys2,
+			     uint8_t *dd0, uint8_t *dd1, uint8_t *dd2,
+			     unsigned lsd,
+			     const uint8_t *ds0, const uint8_t *ds1,
+			     const uint8_t *ds2, unsigned lss)
+{
+	unsigned x, xd, xs, xs2;
+	unsigned id;
+	unsigned is1, is2, is3, is4;
+
+	(void)dd1;
+	(void)dd2;
+
+	for (x=0; x<width; x+=2) {
+
+		xd  = (x + xoffs) * 4;
+
+		xs  = (unsigned)(x * rw);
+		xs2 = (unsigned)((x+1) * rw);
+
+		id = (xd + yd*lsd);
+
+		is1  = (xs)  + (ys )*lss;
+		is2  = (xs2) + (ys )*lss;
+		is3  = (xs)  + (ys2)*lss;
+		is4  = (xs2) + (ys2)*lss;
+
+		_yuv2rgb(&dd0[id],         ds0[is1], ds1[is1], ds2[is1] );
+		_yuv2rgb(&dd0[id+4],       ds0[is2], ds1[is2], ds2[is2] );
+		_yuv2rgb(&dd0[id   + lsd], ds0[is3], ds1[is3], ds2[is3] );
+		_yuv2rgb(&dd0[id+4 + lsd], ds0[is4], ds1[is4], ds2[is4] );
+	}
+}
+
+
+#define MAX_SRC 10
 #define MAX_DST 8
 
 /**
@@ -587,6 +639,7 @@ static line_h *conv_table[MAX_SRC][MAX_DST] = {
  */
 	{yuv420p_to_yuv420p,  NULL,     NULL,     yuv420p_to_rgb32, NULL,
 	 yuv420p_to_rgb565, yuv420p_to_rgb555, yuv420p_to_nv12},
+
 	{yuyv422_to_yuv420p,  NULL,     NULL,     NULL, NULL, NULL, NULL},
 	{uyvy422_to_yuv420p,  NULL,     NULL,     NULL, NULL, NULL, NULL},
 	{rgb32_to_yuv420p,    NULL,     NULL,     NULL, NULL, NULL, NULL},
@@ -595,6 +648,8 @@ static line_h *conv_table[MAX_SRC][MAX_DST] = {
 	{NULL,                NULL,     NULL,     NULL, NULL, NULL, NULL},
 	{nv12_to_yuv420p,     NULL,     NULL,     NULL, NULL, NULL, NULL},
 	{nv21_to_yuv420p,     NULL,     NULL,     NULL, NULL, NULL, NULL},
+
+	{0, 0, 0, yuv444p_to_rgb32}
 };
 
 
