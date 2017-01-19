@@ -73,7 +73,7 @@ include $(MODMKS)
 OBJS	?= $(patsubst %.c,$(BUILD)/%.o,$(filter %.c,$(SRCS)))
 OBJS	+= $(patsubst %.S,$(BUILD)/%.o,$(filter %.S,$(SRCS)))
 
-
+.PHONY: all
 all: $(SHARED) $(STATIC)
 
 
