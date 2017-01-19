@@ -125,7 +125,7 @@ $(BUILD): Makefile $(MK) $(MODMKS)
 clean:
 	@rm -rf $(SHARED) $(STATIC) librem.pc test.d test.o test $(BUILD)
 
-
+.PHONY: install
 install: $(SHARED) $(STATIC) librem.pc
 	@mkdir -p $(DESTDIR)$(LIBDIR) $(DESTDIR)$(LIBDIR)/pkgconfig \
 		$(DESTDIR)$(INCDIR)
